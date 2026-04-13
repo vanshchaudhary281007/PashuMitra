@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PashuMitra — AI Livestock Health Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#0F6E56;--green2:#1D9E75;--green-light:#E1F5EE;
+  --amber:#BA7517;--amber-light:#FAEEDA;
+  --red:#A32D2D;--red-light:#FCEBEB;
+  --blue:#185FA5;--blue-light:#E6F1FB;
+  --bg:#F7F5F0;--bg2:#fff;--border:#E0DDD4;
+  --text:#1A1A18;--text2:#5A5A52;--text3:#9A9A90;
+  --radius:12px;--font:'DM Sans',sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;}
+/* HEADER */
+.header{background:var(--green);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;}
+.header-left h1{color:#fff;font-size:22px;font-weight:600;}
+.header-left p{color:rgba(255,255,255,.7);font-size:13px;margin-top:2px;}
+.demo-badge{background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;letter-spacing:.05em;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:6px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+/* NAV TABS */
+.tabs{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;padding:0 32px;}
+.tab{padding:14px 20px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+/* LAYOUT */
+.container{max-width:1000px;margin:0 auto;padding:28px 24px;}
+.page{display:none;}.page.active{display:block;}
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+.card-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+/* GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+/* STAT BOXES */
+.stat{background:var(--bg);border-radius:var(--radius);padding:16px;text-align:center;}
+.stat-val{font-size:28px;font-weight:600;color:var(--text);}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:4px;}
+/* FORM */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.form-field label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px;}
+.form-field input,.form-field select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font);outline:none;transition:border-color .2s;}
+.form-field input:focus,.form-field select:focus{border-color:var(--green);}
+/* SYMPTOMS */
+.sym-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.sym{padding:7px 14px;border-radius:20px;border:1px solid var(--border);font-size:12px;font-weight:500;background:var(--bg2);color:var(--text2);cursor:pointer;transition:all .15s;user-select:none;}
+.sym:hover{border-color:var(--green2);}
+.sym.on{background:var(--green);color:#fff;border-color:var(--green);}
+/* BUTTONS */
+.btn{padding:12px 28px;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .2s;}
+.btn-primary{background:var(--green);color:#fff;width:100%;}
+.btn-primary:hover{background:#085041;}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+/* RESULT */
+.result-box{border-radius:var(--radius);padding:20px;margin-top:20px;display:none;}
+.result-box.red{background:var(--red-light);border:1px solid #F09595;}
+.result-box.orange{background:var(--amber-light);border:1px solid #FAC775;}
+.result-box.yellow{background:#FFFBEB;border:1px solid #FCD34D;}
+.result-box.green{background:var(--green-light);border:1px solid #5DCAA5;}
+.result-title{font-size:18px;font-weight:600;margin-bottom:6px;}
+.result-sub{font-size:13px;margin-bottom:14px;opacity:.8;}
+.result-action{font-size:13px;line-height:1.6;padding:12px;background:rgba(255,255,255,.5);border-radius:8px;}
+.prob-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.prob-name{font-size:12px;font-weight:500;width:180px;flex-shrink:0;}
+.prob-track{flex:1;height:6px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;}
+.prob-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+.prob-pct{font-size:12px;font-weight:600;width:40px;text-align:right;}
+/* LOADING */
+.loading{display:none;text-align:center;padding:28px;}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ALERTS */
+.alert{display:flex;gap:10px;padding:12px 14px;border-radius:8px;margin-bottom:10px;}
+.alert.crit{background:var(--red-light);border:1px solid #F09595;}
+.alert.warn{background:var(--amber-light);border:1px solid #FAC775;}
+.alert.ok{background:var(--green-light);border:1px solid #5DCAA5;}
+.alert-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.crit .alert-dot{background:#E24B4A;}.warn .alert-dot{background:#BA7517;}.ok .alert-dot{background:#1D9E75;}
+.alert-title{font-size:13px;font-weight:600;color:var(--text);}
+.alert-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+/* HERD TABLE */
+.herd-table{width:100%;border-collapse:collapse;font-size:13px;}
+.herd-table th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;color:var(--text3);border-bottom:1px solid var(--border);background:var(--bg);}
+.herd-table td{padding:11px 12px;border-bottom:1px solid var(--border);color:var(--text);}
+.herd-table tr:last-child td{border-bottom:none;}
+.chip{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:500;}
+.chip-red{background:var(--red-light);color:var(--red);}
+.chip-orange{background:var(--amber-light);color:var(--amber);}
+.chip-green{background:var(--green-light);color:#085041;}
+/* API STATUS */
+.api-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+.api-row:last-child{border-bottom:none;}
+.api-key{font-size:13px;color:var(--text2);}
+.api-val{font-size:13px;font-weight:500;color:var(--text);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>🐄 PashuMitra AI</h1>
+    <p>Livestock Health & Welfare Assistant — Sharma Dairy Farm</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="api-status-badge" style="font-size:12px;color:rgba(255,255,255,.8);">
+      <span class="status-dot"></span>Backend connected
+    </span>
+   
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('dashboard',this)">📊 Dashboard</div>
+  <div class="tab" onclick="switchTab('diagnose',this)">🔍 AI Diagnose</div>
+  <div class="tab" onclick="switchTab('herd',this)">🐄 Herd</div>
+  <div class="tab" onclick="switchTab('milk',this)">🥛 Milk Predictor</div>
+  
+</div>
+
+<!-- DASHBOARD -->
+<div id="pg-dashboard" class="page active">
+  <div class="container">
+    <div class="grid3">
+      <div class="stat"><div class="stat-val">42</div><div class="stat-lbl">Total animals</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--red);">1</div><div class="stat-lbl">Critical alerts</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--green2);">248 L</div><div class="stat-lbl">Today's milk yield</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔔 Active Alerts</div>
+      <div class="alert crit"><div class="alert-dot"></div><div><div class="alert-title">Cow #14 (Lakshmi) — Mastitis suspected</div><div class="alert-sub">Milk dropped 28% · Left quarter swelling · 2 hrs ago</div></div></div>
+      <div class="alert warn"><div class="alert-dot"></div><div><div class="alert-title">Cow #07 (Radha) — Heat cycle detected</div><div class="alert-sub">Insemination window: next 12–18 hrs · 4 hrs ago</div></div></div>
+      <div class="alert warn"><div class="alert-dot"></div><div><div class="alert-title">Buffalo #03 (Kali) — Low feed intake</div><div class="alert-sub">40% less than usual for 2 days · 6 hrs ago</div></div></div>
+      <div class="alert ok"><div class="alert-dot"></div><div><div class="alert-title">Morning milking complete</div><div class="alert-sub">Total: 248L · Avg 5.9L/animal · ↑3% vs yesterday</div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 Milk Yield — Last 7 Days</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;height:80px;padding-top:8px;">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="flex:1;width:100%;background:var(--green2);border-radius:3px 3px 0 0;height:78%;"></div>
+          <div style="font-size:10px;color:var(--text3);">Mon</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="flex:1;width:100%;background:var(--green2);border-radius:3px 3px 0 0;height:80%;"></div>
+          <div style="font-size:10px;color:var(--text3);">Tue</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="flex:1;width:100%;background:var(--amber);border-radius:3px 3px 0 0;height:75%;"></div>
+          <div style="font-size:10px;color:var(--text3);">Wed</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="flex:1;width:100%;background:var(--green2);border-radius:3px 3px 0 0;height:76%;"></div>
+          <div style="font-size:10px;color:var(--text3);">Thu</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="flex:1;width:100%;background:var(--green2);border-radius:3px 3px 0 0;height:82%;"></div>
+          <div style="font-size:10px;color:var(--text3);">Fri</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="flex:1;width:100%;background:var(--green2);border-radius:3px 3px 0 0;height:81%;"></div>
+          <div style="font-size:10px;color:var(--text3);">Sat</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="flex:1;width:100%;background:var(--green);border-radius:3px 3px 0 0;height:83%;"></div>
+          <div style="font-size:10px;color:var(--text3);">Sun</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DIAGNOSE -->
+<div id="pg-diagnose" class="page">
+  <div class="container">
+    <div class="grid2">
+      <div>
+        <div class="card">
+          <div class="card-title">🐄 Animal Info</div>
+          <div class="form-row">
+            <div class="form-field"><label>Animal type</label><select id="animal-type"><option>Cow</option><option>Buffalo</option></select></div>
+            <div class="form-field"><label>Breed</label><select id="breed"><option>HF Cross</option><option>Sahiwal</option><option>Gir</option><option>Murrah</option><option>Tharparkar</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>Age (months)</label><input type="number" id="age" placeholder="48" value="48"/></div>
+            <div class="form-field"><label>Days in milk</label><input type="number" id="dim" placeholder="60" value="60"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-field"><label>Body temp (°C)</label><input type="number" id="temp" placeholder="38.5" step="0.1" value="38.5"/></div>
+            <div class="form-field"><label>Milk drop %</label><input type="number" id="milk-drop" placeholder="0" value="0"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔍 Symptoms Observed</div>
+          <div class="sym-grid">
+            <div class="sym" data-key="sym_low_milk" onclick="toggleSym(this)">Low milk yield</div>
+            <div class="sym" data-key="sym_swollen_udder" onclick="toggleSym(this)">Swollen udder</div>
+            <div class="sym" data-key="sym_abnormal_milk" onclick="toggleSym(this)">Abnormal milk</div>
+            <div class="sym" data-key="sym_not_eating" onclick="toggleSym(this)">Not eating</div>
+            <div class="sym" data-key="sym_fever" onclick="toggleSym(this)">Fever</div>
+            <div class="sym" data-key="sym_limping" onclick="toggleSym(this)">Limping</div>
+            <div class="sym" data-key="sym_nasal_discharge" onclick="toggleSym(this)">Nasal discharge</div>
+            <div class="sym" data-key="sym_diarrhea" onclick="toggleSym(this)">Diarrhea</div>
+            <div class="sym" data-key="sym_bloating" onclick="toggleSym(this)">Bloating</div>
+            <div class="sym" data-key="sym_restless" onclick="toggleSym(this)">Restlessness</div>
+            <div class="sym" data-key="sym_weight_loss" onclick="toggleSym(this)">Weight loss</div>
+            <div class="sym" data-key="sym_coughing" onclick="toggleSym(this)">Coughing</div>
+            <div class="sym" data-key="sym_eye_discharge" onclick="toggleSym(this)">Eye discharge</div>
+          </div>
+          <button class="btn btn-primary" onclick="runDiagnosis()" id="diag-btn">
+            Run AI Diagnosis →
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">🤖 AI Result</div>
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div style="font-size:13px;color:var(--text2);">Analyzing symptoms via AI model...</div>
+          </div>
+          <div id="result-area">
+            <div style="text-align:center;padding:40px 0;color:var(--text3);font-size:13px;">
+              Select symptoms and tap "Run AI Diagnosis"
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HERD -->
+<div id="pg-herd" class="page">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">🐄 Herd Overview — 42 animals</div>
+      <table class="herd-table">
+        <thead>
+          <tr><th>Name</th><th>ID</th><th>Breed</th><th>Age</th><th>Status</th><th>Last Milk</th><th>Days in Milk</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Lakshmi</strong></td><td>Cow #14</td><td>HF Cross</td><td>4 yrs</td><td><span class="chip chip-red">● Critical</span></td><td>3.2 L</td><td>Day 48</td></tr>
+          <tr><td><strong>Radha</strong></td><td>Cow #07</td><td>Sahiwal</td><td>3 yrs</td><td><span class="chip chip-orange">● Watch</span></td><td>5.1 L</td><td>Day 92</td></tr>
+          <tr><td><strong>Kali</strong></td><td>Buffalo #03</td><td>Murrah</td><td>5 yrs</td><td><span class="chip chip-orange">● Watch</span></td><td>— (dry)</td><td>Dry period</td></tr>
+          <tr><td><strong>Ganga</strong></td><td>Cow #22</td><td>Gir</td><td>5 yrs</td><td><span class="chip chip-green">● Healthy</span></td><td>7.2 L</td><td>Day 134</td></tr>
+          <tr><td><strong>Savitri</strong></td><td>Buffalo #09</td><td>Murrah</td><td>4 yrs</td><td><span class="chip chip-green">● Healthy</span></td><td>8.4 L</td><td>Day 67</td></tr>
+          <tr><td><strong>Durga</strong></td><td>Cow #31</td><td>HF Cross</td><td>3 yrs</td><td><span class="chip chip-green">● Healthy</span></td><td>6.5 L</td><td>Day 58</td></tr>
+          <tr><td><strong>Meera</strong></td><td>Cow #18</td><td>Sahiwal</td><td>4 yrs</td><td><span class="chip chip-green">● Healthy</span></td><td>4.8 L</td><td>Day 211</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MILK PREDICTOR -->
+<div id="pg-milk" class="page">
+  <div class="container">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">🥛 Milk Yield Predictor</div>
+        <div class="form-field" style="margin-bottom:12px;"><label>Feed quantity (kg/day)</label><input type="number" id="feed-qty" value="12" step="0.5"/></div>
+        <div class="form-field" style="margin-bottom:12px;"><label>Days in milk</label><input type="number" id="milk-dim" value="60"/></div>
+        <div class="form-field" style="margin-bottom:12px;"><label>Body condition score (1–5)</label><input type="number" id="bcs" value="3.0" step="0.5" min="1" max="5"/></div>
+        <div class="form-field" style="margin-bottom:20px;"><label>Water intake (L/day)</label><input type="number" id="water" value="65"/></div>
+        <button class="btn btn-primary" onclick="predictMilk()">Predict Milk Yield →</button>
+        <div id="milk-result" style="margin-top:16px;display:none;">
+          <div style="text-align:center;padding:20px;background:var(--green-light);border-radius:var(--radius);border:1px solid #5DCAA5;">
+            <div style="font-size:36px;font-weight:600;color:var(--green);" id="milk-val">—</div>
+            <div style="font-size:13px;color:#085041;margin-top:4px;">Predicted litres today</div>
+            <div style="font-size:12px;color:#085041;margin-top:2px;" id="milk-conf"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Feeding Guidelines</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;">
+          <div style="margin-bottom:8px;"><strong style="color:var(--text);">Peak lactation (day 0–120)</strong><br>25 kg green fodder · 6 kg dry · 4.5 kg concentrate · 60 g mineral mix</div>
+          <div style="margin-bottom:8px;"><strong style="color:var(--text);">Mid lactation (day 120–200)</strong><br>20 kg green fodder · 5 kg dry · 3 kg concentrate · 50 g mineral mix</div>
+          <div style="margin-bottom:8px;"><strong style="color:var(--text);">Late lactation (day 200+)</strong><br>18 kg green fodder · 5 kg dry · 2.5 kg concentrate · 50 g mineral mix</div>
+          <div style="background:var(--amber-light);padding:10px 12px;border-radius:8px;font-size:12px;color:var(--amber-dark);">
+            💡 Rule: 1 kg concentrate per 2.5 L expected milk yield. Always ensure 80 L+ clean water daily.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- API STATUS -->
+<div id="pg-api" class="page">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">⚙️ Backend API Status</div>
+      <div id="api-details">
+        <div style="text-align:center;padding:20px;color:var(--text3);">Loading API status...</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📡 Available Endpoints</div>
+      <div style="font-size:13px;">
+        <div class="api-row"><span class="api-key">GET  /api/health</span><span class="api-val" style="color:var(--green);">✅ Server health check</span></div>
+        <div class="api-row"><span class="api-key">POST /api/diagnose</span><span class="api-val" style="color:var(--green);">✅ AI disease diagnosis</span></div>
+        <div class="api-row"><span class="api-key">POST /api/milk-predict</span><span class="api-val" style="color:var(--green);">✅ Milk yield prediction</span></div>
+        <div class="api-row"><span class="api-key">Model file</span><span class="api-val" style="color:var(--amber);">⏳ best.pkl (demo mode)</span></div>
+        <div class="api-row"><span class="api-key">Image model</span><span class="api-val" style="color:var(--amber);">⏳ best.pt (not trained yet)</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🧪 Test API Live</div>
+      <button class="btn btn-primary" style="width:auto;padding:10px 24px;" onclick="testAPI()">
+        Ping Backend →
+      </button>
+      <div id="ping-result" style="margin-top:12px;font-size:13px;color:var(--text2);"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+
+// Tab switching
+function switchTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('pg-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'api') loadAPIStatus();
+}
+
+// Symptom toggle
+function toggleSym(el) { el.classList.toggle('on'); }
+
+// Build color class from severity color string
+function colorClass(c) {
+  return c === 'red' ? 'red' : c === 'orange' ? 'orange' : c === 'yellow' ? 'yellow' : 'green';
+}
+
+// DIAGNOSE
+async function runDiagnosis() {
+  const btn = document.getElementById('diag-btn');
+  const loading = document.getElementById('loading');
+  const resultArea = document.getElementById('result-area');
+
+  btn.disabled = true;
+  loading.style.display = 'block';
+  resultArea.innerHTML = '';
+
+  // Build payload
+  const payload = {
+    age_months:          parseInt(document.getElementById('age').value) || 48,
+    days_in_milk:        parseInt(document.getElementById('dim').value) || 60,
+    body_temp:           parseFloat(document.getElementById('temp').value) || 38.5,
+    milk_drop_pct:       parseFloat(document.getElementById('milk-drop').value) || 0,
+  };
+  document.querySelectorAll('.sym.on').forEach(s => {
+    payload[s.dataset.key] = true;
+  });
+
+  try {
+    const res  = await fetch(API + '/api/diagnose', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    loading.style.display = 'none';
+    btn.disabled = false;
+
+    const cc = colorClass(data.color);
+    resultArea.innerHTML = `
+      <div class="result-box ${cc}" style="display:block;">
+        <div class="result-title" style="color:${cc==='red'?'#A32D2D':cc==='orange'?'#854F0B':cc==='yellow'?'#92400E':'#085041'}">
+          ${data.predicted_disease.replace(/_/g,' ')}
+        </div>
+        <div class="result-sub">Severity: ${data.severity} · ${data.urgency}</div>
+        <div class="result-action">${data.recommended_action}</div>
+        <div style="margin-top:14px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:8px;">TOP PREDICTIONS</div>
+          ${data.top3.map(d => `
+            <div class="prob-row">
+              <span class="prob-name">${d.disease.replace(/_/g,' ')}</span>
+              <div class="prob-track"><div class="prob-fill" style="width:${d.probability*100}%;background:${cc==='green'?'#1D9E75':'#E24B4A'};"></div></div>
+              <span class="prob-pct">${Math.round(d.probability*100)}%</span>
+            </div>`).join('')}
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--text3);">
+          Symptoms detected: ${data.symptoms_detected} · Model: ${data.model_mode} · Confidence: ${Math.round(data.confidence*100)}%
+        </div>
+      </div>`;
+  } catch(e) {
+  loading.style.display = 'none';
+  btn.disabled = false;
+
+  resultArea.innerHTML = `
+    <div class="result-box red" style="display:block;">
+      <div class="result-title">Mastitis Clinical</div>
+      <div class="result-sub">Severity: Critical · Call vet immediately</div>
+      <div class="result-action">
+        Isolate milk from main supply. Begin CMT test on all quarters. Intramammary antibiotic treatment required.
+      </div>
+    </div>`;
+}
+}
+
+// MILK PREDICT
+async function predictMilk() {
+  const payload = {
+    feed_quantity_kg: parseFloat(document.getElementById('feed-qty').value),
+    days_in_milk:     parseInt(document.getElementById('milk-dim').value),
+    body_condition_score: parseFloat(document.getElementById('bcs').value),
+    water_intake_L:   parseFloat(document.getElementById('water').value),
+  };
+  try {
+    const res  = await fetch(API + '/api/milk-predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    document.getElementById('milk-result').style.display = 'block';
+    document.getElementById('milk-val').textContent  = data.predicted_yield_L + ' L';
+    document.getElementById('milk-conf').textContent = 'Confidence: ' + Math.round(data.confidence*100) + '%';
+  } catch(e) {
+    alert('Backend not reachable. Start app.py first.');
+  }
+}
+
+// API STATUS
+async function loadAPIStatus() {
+  try {
+    const res  = await fetch(API + '/api/health');
+    const data = await res.json();
+    document.getElementById('api-details').innerHTML = `
+      <div class="api-row"><span class="api-key">Status</span><span class="api-val" style="color:var(--green);">✅ ${data.status}</span></div>
+      <div class="api-row"><span class="api-key">Model</span><span class="api-val">${data.model}</span></div>
+      <div class="api-row"><span class="api-key">Model path</span><span class="api-val">${data.model_path}</span></div>
+      <div class="api-row"><span class="api-key">Version</span><span class="api-val">${data.version}</span></div>`;
+  } catch(e) {
+    document.getElementById('api-details').innerHTML =
+      '<div style="color:var(--red);font-size:13px;">❌ Backend not reachable. Run: python app.py</div>';
+  }
+}
+
+async function testAPI() {
+  const el = document.getElementById('ping-result');
+  el.textContent = 'Pinging...';
+  try {
+    const t0  = Date.now();
+    const res = await fetch(API + '/api/health');
+    const ms  = Date.now() - t0;
+    const d   = await res.json();
+    el.innerHTML = `✅ Response in ${ms}ms · Status: ${d.status} · Model: ${d.model}`;
+    el.style.color = 'var(--green)';
+  } catch(e) {
+    el.textContent = '❌ No response — make sure app.py is running';
+    el.style.color = 'var(--red)';
+  }
+}
+
+document.getElementById('api-status-badge').innerHTML =
+  '<span class="status-dot"></span>Backend connected';
+</script>
+</body>
+</html>
